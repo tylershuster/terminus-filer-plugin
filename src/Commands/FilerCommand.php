@@ -108,8 +108,12 @@ class FilerCommand extends TerminusCommand implements SiteAwareInterface
      * @usage terminus site:filer <site>.<env> --bundle=<bundle>
      * @usage terminus site:filer <site>.<env> --app=<app> --persistant=<persistant> --app_args=<app_args>
      */
-    public function filer($site_env, $options = ['app' => NULL, 'bundle' => NULL, 'persistant' => false, 'app_args' => NULL]) {
+    public function filer($site_env, $options = ['app' => NULL, 'bundle' => NULL, 'persistant' => false, 'app_args' => NULL, 'path' => NULL]) {
         $supported_apps = unserialize(SUPPORTED_APPS);
+        $path = '';
+        if(isset($options['path'])) {
+          $path = $options['path'];
+        }
         $app = '';
         if (isset($options['app'])) {
             $app = $options['app'];
@@ -178,7 +182,7 @@ class FilerCommand extends TerminusCommand implements SiteAwareInterface
                 }
             }
         } else {
-            $connection = $connection_info['url'];
+            $connection = $connection_info['url'] . $path;
         }
 
         // Operating system specific checks
@@ -206,6 +210,8 @@ class FilerCommand extends TerminusCommand implements SiteAwareInterface
         $this->log()->notice(
             'Opening {domain} in {app}', array('domain' => $domain, 'app' => $app)
         );
+
+        $this->log()->notice("Command $command");
 
         if ($this->validCommand($app)){
             if ($app == 'sftp') {
@@ -238,7 +244,13 @@ class FilerCommand extends TerminusCommand implements SiteAwareInterface
         if (OS != 'DAR') {
             throw new TerminusException('Operating system not supported.');
         }
-        $this->filer($site_env, ['bundle' => 'com.panic.transmit']);
+        $path = NULL;
+        $parts = explode('/', $site_env);
+        if($parts[1]) {
+          $site_env = array_shift($parts);
+          $path = '/' . implode('/', $parts);
+        }
+        $this->filer($site_env, ['bundle' => 'com.panic.transmit', 'path' => $path]);
     }
 
     /**
